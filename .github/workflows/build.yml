@@ -1,0 +1,49 @@
+
+name: Build YPTLauncher APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'YPTLauncher-Android-Project.zip'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android
+        uses: android-actions/setup-android@v3
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extraer proyecto
+        run: |
+          unzip -q YPTLauncher-Android-Project.zip -d source
+          PROJECT_DIR=$(dirname "$(find source -name settings.gradle.kts -print -quit)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+
+      - name: Compilar APK
+        run: |
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: YPTLauncher-APK
+          path: '**/build/outputs/apk/debug/*.apk'
+          
